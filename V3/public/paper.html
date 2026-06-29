@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paper — Scholarly Repository</title>
+  <meta name="description" content="Read a research paper from the Scholarly Repository." />
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a href="index.html" class="site-logo">Scholarly<span>.</span></a>
+      <nav class="site-nav" id="headerNav">
+        <a href="index.html">← Home</a>
+      </nav>
+    </div>
+  </header>
+
+
+  <div class="study-meta-bar" id="metaBar" style="display:none;">
+    <div class="study-meta-bar__inner fade-in">
+      <nav class="study-meta-bar__breadcrumb" id="breadcrumb">
+        <a href="index.html">Home</a>
+        <span>›</span>
+        <span id="breadAuthor">…</span>
+        <span>›</span>
+        <span id="breadTitle">…</span>
+      </nav>
+    </div>
+  </div>
+
+
+  <div class="study-container" id="loadingWrapper">
+    <div class="skeleton" style="height:48px; width:80%; margin-bottom:1rem;"></div>
+    <div class="skeleton" style="height:20px; width:40%; margin-bottom:3rem;"></div>
+    <div class="skeleton" style="height:120px; margin-bottom:2rem; border-radius:12px;"></div>
+    <div class="skeleton" style="height:16px; margin-bottom:1rem;"></div>
+    <div class="skeleton" style="height:16px; margin-bottom:1rem;"></div>
+    <div class="skeleton" style="height:16px; margin-bottom:1rem;"></div>
+  </div>
+
+  <article class="study-container" id="contentWrapper" style="display:none;">
+    <header class="study-header">
+      <div class="study-header__type" id="paperType">Research Paper</div>
+      <h1 id="paperTitle">…</h1>
+      <div class="study-header__author">
+        Authored by <a id="authorLink" href="#">…</a> · Published <span id="pubDate">…</span>
+      </div>
+    </header>
+
+    <!-- ── Thumbnail ── -->
+    <div class="paper-thumbnail-wrap" id="paperThumbnailWrap" style="display:none;">
+      <img id="paperThumbnail" src="" alt="" class="paper-thumbnail" />
+    </div>
+
+    <!-- ── Summary block — shown prominently BEFORE the full content ── -->
+    <div class="paper-summary-block" id="paperSummaryBlock" style="display:none;">
+      <div class="paper-summary-block__label">📝 Summary</div>
+      <p class="paper-summary-block__text" id="paperSummaryText"></p>
+    </div>
+
+    <!-- ── Download button (visible above the full content too) ── -->
+    <div id="downloadTopWrap" style="display:none; margin-bottom: 2rem;">
+      <a href="#" download id="downloadLinkTop" class="btn btn--primary btn--download-top">
+        📥 Download Full Document
+      </a>
+    </div>
+
+    <div class="study-content" id="paperBody"></div>
+
+    <a href="#" download id="downloadLink" class="btn btn--outline btn--download" style="display:none;">
+      📥 Download Original Document File
+    </a>
+
+    <div class="rating-widget">
+      <span class="rating-widget__label">Evaluate this study sheet:</span>
+      <div class="star-row" id="starRow">
+        <span class="star" data-val="1">★</span>
+        <span class="star" data-val="2">★</span>
+        <span class="star" data-val="3">★</span>
+        <span class="star" data-val="4">★</span>
+        <span class="star" data-val="5">★</span>
+      </div>
+      <span class="rating-widget__summary" id="ratingSummary">0 / 5 from 0 ratings</span>
+    </div>
+  </article>
+
+  <footer class="site-footer">
+    <p>© 2026 · TIDKE'S CREATION · All Rights Reserved</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    const SUPABASE_URL = "https://xpakodbcszobvvbhurmj.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwYWtvZGJjc3pvYnZ2Ymh1cm1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyODM3OTYsImV4cCI6MjA5Nzg1OTc5Nn0.ZPxMPFgpMfimv7x5WkK_w6K45W23v7QlmRr4gWuahts";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const paperId = urlParams.get('id');
+
+    if (!paperId) window.location.href = 'index.html';
+
+    async function loadPaper() {
+      try {
+        // Fetch metadata along with raw text bodies
+        const { data: paper, error } = await supabase
+          .from('papers')
+          .select('*, profiles(id, full_name)')
+          .eq('id', paperId)
+          .single();
+
+        if (error || !paper) throw new Error('Paper database resolution exception.');
+
+        // Query view schema mapping aggregate review calculations
+        const { data: stats } = await supabase
+          .from('paper_stats')
+          .select('avg_rating, rating_count')
+          .eq('paper_id', paperId)
+          .single();
+
+        // Update headers and page wrappers
+        document.title = `${paper.title} — Scholarly Repository`;
+        document.getElementById('breadAuthor').textContent = paper.profiles.full_name;
+        document.getElementById('breadTitle').textContent = paper.title.length > 30 ? paper.title.slice(0,27)+'…' : paper.title;
+        
+        document.getElementById('paperType').textContent = paper.paper_type;
+        if(paper.paper_type === 'Case Study') {
+          document.getElementById('paperType').classList.add('study-header__type--case');
+        }
+        document.getElementById('paperTitle').textContent = paper.title;
+        document.getElementById('authorLink').textContent = paper.profiles.full_name;
+        document.getElementById('authorLink').href = `author.html?id=${paper.profiles.id}`;
+        document.getElementById('pubDate').textContent = new Date(paper.published_date || paper.created_at).toLocaleDateString('en-IN', {year:'numeric', month:'long', day:'numeric'});
+
+        // ── Show thumbnail if available ──
+        if (paper.thumbnail_url) {
+          const thumbEl = document.getElementById('paperThumbnail');
+          thumbEl.src = paper.thumbnail_url;
+          thumbEl.alt = paper.title;
+          document.getElementById('paperThumbnailWrap').style.display = 'block';
+        }
+
+        // ── Show summary block prominently ──
+        const summary = paper.abstract || paper.summary || '';
+        if (summary) {
+          document.getElementById('paperSummaryText').textContent = summary;
+          document.getElementById('paperSummaryBlock').style.display = 'block';
+        }
+
+        // ── Download button above content ──
+        const docHref = paper.doc_url || paper.docx_url;
+        if (docHref) {
+          const topDownload = document.getElementById('downloadLinkTop');
+          topDownload.href = docHref;
+          document.getElementById('downloadTopWrap').style.display = 'block';
+        }
+
+        // Load the extracted HTML text (may be null for newer uploads)
+        if (paper.html_content) {
+          document.getElementById('paperBody').innerHTML = paper.html_content;
+        }
+
+        // Set up the download file attachment link (bottom)
+        if (docHref) {
+          const downloadBtn = document.getElementById('downloadLink');
+          downloadBtn.href = docHref;
+          downloadBtn.style.display = 'inline-flex';
+        }
+
+        if (stats) {
+          document.getElementById('ratingSummary').textContent = 
+            `${stats.avg_rating} / 5 from ${stats.rating_count} rating${stats.rating_count !== 1 ? 's' : ''}`;
+        }
+
+        document.getElementById('loadingWrapper').style.display = 'none';
+        document.getElementById('metaBar').style.display = '';
+        document.getElementById('contentWrapper').style.display = 'block';
+
+        setupRatingEngine();
+      } catch (err) {
+        console.error(err);
+        window.location.href = '404.html';
+      }
+    }
+
+    function setupRatingEngine() {
+      const stars = document.querySelectorAll('#starRow .star');
+      stars.forEach(star => {
+        star.addEventListener('mouseenter', () => {
+          const val = +star.dataset.val;
+          stars.forEach(s => s.classList.toggle('active', +s.dataset.val <= val));
+        });
+        star.addEventListener('mouseleave', () => {
+          stars.forEach(s => s.classList.remove('active'));
+        });
+        star.addEventListener('click', async () => {
+          const { data: { session: sess } } = await supabase.auth.getSession();
+          if (!sess) {
+            alert('Please log in to rate this paper.');
+            window.location.href = 'login.html';
+            return;
+          }
+
+          const starsVal = +star.dataset.val;
+
+          const resp = await fetch('/.netlify/functions/submit-rating', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paperId,
+              stars: starsVal,
+              accessToken: sess.access_token
+            })
+          });
+
+          const json = await resp.json();
+          if (resp.ok && json.success) {
+            alert('Thank you for rating this paper!');
+            document.getElementById('ratingSummary').textContent =
+              `${json.avgRating} / 5 from ${json.ratingCount} rating${json.ratingCount !== 1 ? 's' : ''}`;
+          } else {
+            alert('Could not submit rating: ' + (json.error || 'Unknown error'));
+          }
+        });
+      });
+    }
+
+    await loadPaper();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Author — Scholarly Repository</title>
+  <meta name="description" content="View an author's research papers on the Scholarly Repository." />
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a href="index.html" class="site-logo">Scholarly<span>.</span></a>
+      <nav class="site-nav">
+        <a href="index.html">← Home</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Author Profile Header Skeleton -->
+  <div class="author-header" id="authorHeaderSkeleton">
+    <div class="author-header__inner">
+      <div class="skeleton" style="width:80px;height:80px;border-radius:50%;flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div class="skeleton" style="height:28px;width:220px;margin-bottom:.75rem;"></div>
+        <div class="skeleton" style="height:16px;width:140px;margin-bottom:.5rem;"></div>
+        <div class="skeleton" style="height:16px;width:340px;margin-top:1.25rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="author-header" id="authorHeader" style="display:none;">
+    <div class="author-header__inner fade-in">
+      <div class="author-header__avatar" id="authorAvatar">?</div>
+      <div>
+        <h1 class="author-header__name" id="authorName">…</h1>
+        <div class="author-header__meta">
+          <strong>Student ID:</strong> <span id="authorMetaId">…</span><br>
+          <strong>Branch:</strong> <span id="authorMetaDept">…</span><br>
+          <strong>Institution:</strong> <span id="authorMetaInst">…</span>
+        </div>
+        <p class="author-header__bio" id="authorBio"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Research Grid -->
+  <main class="section">
+    <h2 style="margin-bottom:2rem;">Published Research</h2>
+    <div class="research-grid" id="papersGrid">
+      <div class="skeleton skeleton-research-card"></div>
+      <div class="skeleton skeleton-research-card"></div>
+      <div class="skeleton skeleton-research-card"></div>
+    </div>
+    <div id="noPapersMessage" style="display:none; text-align:center; padding:3rem; color:var(--text-muted);">
+      This author hasn't published any research yet.
+    </div>
+  </main>
+
+  <!-- ── Summary Modal ── -->
+  <div class="modal-overlay" id="summaryModal" onclick="closeModal(event)">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+
+      <button class="modal-close" onclick="closeModalDirect()" aria-label="Close">✕</button>
+
+      <div class="modal-thumbnail-wrap" id="modalThumbnailWrap" style="display:none;">
+        <img src="" alt="" id="modalThumbnail" class="modal-thumbnail" />
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-eyebrow">Research Summary</div>
+        <h2 class="modal-title" id="modalTitle">…</h2>
+        <div class="modal-date" id="modalDate"></div>
+
+        <div class="modal-summary-text" id="modalSummary">…</div>
+
+        <div class="modal-download-section">
+          <a href="#" id="modalDownloadBtn" class="btn btn--primary btn--download-cta" download target="_blank">
+            📄 Download Research Document
+          </a>
+          <p class="modal-download-desc">
+            This summary provides a quick overview of the research. For the complete paper, detailed methodology, references, tables, figures, and additional findings, download the original document below.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>© 2026 · TIDKE'S CREATION · All Rights Reserved</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    const SUPABASE_URL  = "https://xpakodbcszobvvbhurmj.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwYWtvZGJjc3pvYnZ2Ymh1cm1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyODM3OTYsImV4cCI6MjA5Nzg1OTc5Nn0.ZPxMPFgpMfimv7x5WkK_w6K45W23v7QlmRr4gWuahts";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const authorId  = urlParams.get('id');
+
+    if (!authorId) window.location.href = 'index.html';
+
+    // ── Modal logic ──
+    window.openSummaryModal = function(paper) {
+      const modal = document.getElementById('summaryModal');
+
+      document.getElementById('modalTitle').textContent   = paper.title;
+      document.getElementById('modalSummary').textContent = paper.abstract || 'No summary available.';
+
+      const dateEl = document.getElementById('modalDate');
+      if (paper.published_date || paper.created_at) {
+        const d = new Date(paper.published_date || paper.created_at);
+        dateEl.textContent = 'Published ' + d.toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' });
+        dateEl.style.display = '';
+      } else {
+        dateEl.style.display = 'none';
+      }
+
+      const thumbWrap = document.getElementById('modalThumbnailWrap');
+      const thumbImg  = document.getElementById('modalThumbnail');
+      if (paper.thumbnail_url) {
+        thumbImg.src              = paper.thumbnail_url;
+        thumbImg.alt              = paper.title;
+        thumbWrap.style.display   = 'block';
+      } else {
+        thumbWrap.style.display   = 'none';
+      }
+
+      const dlBtn = document.getElementById('modalDownloadBtn');
+      if (paper.doc_url || paper.docx_url) {
+        dlBtn.href            = paper.doc_url || paper.docx_url;
+        dlBtn.style.display   = 'inline-flex';
+      } else {
+        dlBtn.style.display   = 'none';
+      }
+
+      modal.classList.add('modal-overlay--open');
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closeModalDirect = function() {
+      document.getElementById('summaryModal').classList.remove('modal-overlay--open');
+      document.body.style.overflow = '';
+    };
+
+    window.closeModal = function(event) {
+      if (event.target === document.getElementById('summaryModal')) {
+        closeModalDirect();
+      }
+    };
+
+    // Close on Escape
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModalDirect();
+    });
+
+    // ── Load author details ──
+    async function loadAuthorDetails() {
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles').select('*').eq('id', authorId).single();
+
+        if (error || !profile) throw new Error('Profile not found');
+
+        document.title = `${profile.full_name} — Scholarly Repository`;
+        document.getElementById('authorName').textContent     = profile.full_name;
+        document.getElementById('authorAvatar').textContent   = profile.full_name.charAt(0).toUpperCase();
+        document.getElementById('authorMetaId').textContent   = profile.college_id;
+        document.getElementById('authorMetaDept').textContent = profile.department;
+        document.getElementById('authorMetaInst').textContent = profile.institution;
+        document.getElementById('authorBio').textContent      = profile.bio || 'No biography provided yet.';
+
+        document.getElementById('authorHeaderSkeleton').style.display = 'none';
+        document.getElementById('authorHeader').style.display          = '';
+
+        await loadAuthorPapers();
+      } catch (err) {
+        window.location.href = '404.html';
+      }
+    }
+
+    // ── Load papers ──
+    async function loadAuthorPapers() {
+      const grid    = document.getElementById('papersGrid');
+      const emptyEl = document.getElementById('noPapersMessage');
+
+      try {
+        const { data: papers, error } = await supabase
+          .from('papers')
+          .select('id, title, abstract, thumbnail_url, doc_url, docx_url, published_date, created_at')
+          .eq('author_id', authorId)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!papers || papers.length === 0) {
+          grid.innerHTML = '';
+          emptyEl.style.display = 'block';
+          return;
+        }
+
+        const delays = ['fade-in-delay-1','fade-in-delay-2','fade-in-delay-3'];
+
+        grid.innerHTML = papers.map((paper, i) => {
+          const pubDate = (paper.published_date || paper.created_at)
+            ? new Date(paper.published_date || paper.created_at).toLocaleDateString('en-IN', { year:'numeric', month:'short', day:'numeric' })
+            : '';
+
+          const previewText = paper.abstract
+            ? (paper.abstract.length > 160 ? paper.abstract.slice(0, 158) + '…' : paper.abstract)
+            : 'No summary available.';
+
+          const thumbHtml = paper.thumbnail_url
+            ? `<div class="rc-thumb-wrap"><img src="${escHtml(paper.thumbnail_url)}" alt="${escHtml(paper.title)}" class="rc-thumb" loading="lazy" /></div>`
+            : `<div class="rc-thumb-wrap rc-thumb-wrap--placeholder"><span class="rc-thumb-icon">📄</span></div>`;
+
+          // Serialise paper data to pass to the modal opener
+          const paperJson = escAttr(JSON.stringify({
+            id            : paper.id,
+            title         : paper.title,
+            abstract      : paper.abstract,
+            thumbnail_url : paper.thumbnail_url,
+            doc_url       : paper.doc_url,
+            docx_url      : paper.docx_url,
+            published_date: paper.published_date,
+            created_at    : paper.created_at,
+          }));
+
+          return `
+            <article class="research-card fade-in ${delays[i % delays.length]}" data-paper='${paperJson}'>
+              ${thumbHtml}
+              <div class="rc-body">
+                ${pubDate ? `<div class="rc-date">${pubDate}</div>` : ''}
+                <h3 class="rc-title">${escHtml(paper.title)}</h3>
+                <p class="rc-preview">${escHtml(previewText)}</p>
+                <button class="btn btn--outline rc-summary-btn" onclick="openSummaryModal(JSON.parse(this.closest('.research-card').dataset.paper))">
+                  Read Summary →
+                </button>
+              </div>
+            </article>`;
+        }).join('');
+
+      } catch (err) {
+        grid.innerHTML = `<p style="color:red; text-align:center; width:100%;">Error loading papers: ${err.message}</p>`;
+      }
+    }
+
+    function escHtml(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function escAttr(str) {
+      return String(str || '').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+    }
+
+    await loadAuthorDetails();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Scholarly Repository</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a href="index.html" class="site-logo">Scholarly<span>.</span></a>
+      <nav class="site-nav">
+        <a href="index.html">Home</a>
+        <a href="account.html">Account</a>
+        <a href="#" id="logoutBtn">Log Out</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="dashboard-layout fade-in">
+
+    <aside class="dashboard-sidebar">
+      <div class="dashboard-sidebar__name" id="sidebarName">Loading…</div>
+      <div class="dashboard-sidebar__role" id="sidebarMeta">— Student Author</div>
+      <nav class="dash-nav">
+        <a href="#upload"   class="active" id="nav-upload"   onclick="showTab('upload',this)">📤 Upload Research</a>
+        <a href="#mypapers"               id="nav-mypapers"  onclick="showTab('mypapers',this)">📄 My Publications</a>
+        <a href="#profile"                id="nav-profile"   onclick="showTab('profile',this)">👤 Edit Profile</a>
+        <a href="account.html">⚙️ Account Center</a>
+      </nav>
+    </aside>
+
+    <main class="dash-content">
+
+      <!-- ── Upload Tab ── -->
+      <section id="tab-upload">
+        <h2>Upload Research</h2>
+        <p style="color:var(--text-muted); margin-bottom:2rem; font-size:0.9375rem;">
+          Publish your research paper, case study, or report. Fill in the details below and upload your document.
+        </p>
+
+        <div class="alert alert--error"   id="uploadErr"></div>
+        <div class="alert alert--success" id="uploadSuccess"></div>
+
+        <div id="uploadForm">
+          <!-- Title -->
+          <div class="form-group">
+            <label for="paperTitle">Research Title <span class="field-required">*</span></label>
+            <input type="text" id="paperTitle" placeholder="e.g. Analysis of Cloud Storage Optimization in Distributed Systems" required />
+          </div>
+
+          <!-- Summary -->
+          <div class="form-group">
+            <label for="paperSummary">
+              Summary <span class="field-required">*</span>
+              <span class="char-count" id="charCount">0 / 1000</span>
+            </label>
+            <textarea
+              id="paperSummary"
+              rows="6"
+              placeholder="Write a clear summary of your research — what it covers, your key findings, and why it matters. This will be shown as a preview on your publication card. (300–1000 characters recommended)"
+              oninput="updateCharCount()"
+            ></textarea>
+            <div class="field-hint">This appears as the research preview. Aim for 300–1000 characters.</div>
+          </div>
+
+          <!-- Thumbnail -->
+          <div class="form-group">
+            <label for="thumbnailFile">Thumbnail Image <span class="field-optional">(optional)</span></label>
+            <div class="file-drop-zone" id="thumbDropZone" onclick="document.getElementById('thumbnailFile').click()">
+              <div class="file-drop-zone__icon">🖼️</div>
+              <div class="file-drop-zone__text">Click to upload a thumbnail image</div>
+              <div class="file-drop-zone__hint">JPG, PNG, or WEBP · Recommended 800×450px</div>
+              <input type="file" id="thumbnailFile" accept="image/*" style="display:none" onchange="handleThumbPreview(event)" />
+            </div>
+            <div id="thumbPreviewWrap" style="display:none; margin-top:0.75rem;">
+              <img id="thumbPreview" src="" alt="Thumbnail preview" class="thumb-preview-img" />
+              <button type="button" class="btn btn--outline btn--sm" onclick="clearThumbnail()" style="margin-top:0.5rem; display:block;">✕ Remove</button>
+            </div>
+          </div>
+
+          <!-- Document Upload -->
+          <div class="form-group">
+            <label for="docFile">Research Document <span class="field-required">*</span></label>
+            <div class="file-drop-zone" id="docDropZone" onclick="document.getElementById('docFile').click()">
+              <div class="file-drop-zone__icon">📄</div>
+              <div class="file-drop-zone__text" id="docDropText">Click to upload your document</div>
+              <div class="file-drop-zone__hint">PDF, DOCX, or DOC · Max 20MB</div>
+              <input type="file" id="docFile" accept=".pdf,.docx,.doc" style="display:none" onchange="handleDocSelect(event)" />
+            </div>
+          </div>
+
+          <button type="button" class="btn btn--primary btn--full" id="uploadBtn" onclick="handleUpload()">
+            Publish Research
+          </button>
+          <div class="progress-wrap" id="progressWrap">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-label" id="progressLabel"></div>
+        </div>
+      </section>
+
+      <!-- ── My Papers Tab ── -->
+      <section id="tab-mypapers" style="display:none;">
+        <h2>My Publications</h2>
+        <div class="papers-list" id="myPapersContainer">
+          <p style="color:var(--text-muted)">Loading…</p>
+        </div>
+      </section>
+
+      <!-- ── Profile Tab ── -->
+      <section id="tab-profile" style="display:none;">
+        <h2>Edit Profile</h2>
+        <div class="alert alert--error"   id="profileErr"></div>
+        <div class="alert alert--success" id="profileSuccess"></div>
+        <div class="form-group">
+          <label for="profName">Full Name</label>
+          <input type="text" id="profName" required />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="profId">Student Roll No / ID</label>
+            <input type="text" id="profId" readonly style="background:var(--surface-2);color:var(--text-muted);" />
+          </div>
+          <div class="form-group">
+            <label for="profDept">Branch / Department</label>
+            <input type="text" id="profDept" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="profInst">Institution</label>
+          <input type="text" id="profInst" required />
+        </div>
+        <div class="form-group">
+          <label for="profBio">Short Bio</label>
+          <textarea id="profBio" rows="4" placeholder="Tell readers about your research areas and interests…"></textarea>
+        </div>
+        <button type="button" class="btn btn--primary" id="saveProfileBtn" onclick="saveProfile()">
+          Update Profile
+        </button>
+      </section>
+
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>© 2026 · TIDKE'S CREATION · All Rights Reserved</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    const SUPABASE_URL  = "https://xpakodbcszobvvbhurmj.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwYWtvZGJjc3pvYnZ2Ymh1cm1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyODM3OTYsImV4cCI6MjA5Nzg1OTc5Nn0.ZPxMPFgpMfimv7x5WkK_w6K45W23v7QlmRr4gWuahts";
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    let currentUser = null;
+
+    function initDashboard(session) {
+      if (!session) {
+        window.location.href = 'login.html';
+        return;
+      }
+      currentUser = session.user;
+      loadProfile();
+
+      document.getElementById('logoutBtn').addEventListener('click', async e => {
+        e.preventDefault();
+        await sb.auth.signOut();
+        window.location.href = 'index.html';
+      });
+    }
+
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        initDashboard(session);
+      }
+      if (event === 'SIGNED_OUT') {
+        window.location.href = 'login.html';
+      }
+    });
+
+    // ── Tab switching ──
+    window.showTab = function(name, link) {
+      ['upload', 'mypapers', 'profile'].forEach(t => {
+        document.getElementById(`tab-${t}`).style.display = t === name ? '' : 'none';
+      });
+      document.querySelectorAll('.dash-nav a').forEach(a => a.classList.remove('active'));
+      if (link) link.classList.add('active');
+      if (name === 'mypapers') loadPapers();
+    };
+
+    // ── Char counter ──
+    window.updateCharCount = function() {
+      const val = document.getElementById('paperSummary').value.length;
+      const el  = document.getElementById('charCount');
+      el.textContent = `${val} / 1000`;
+      el.style.color = val > 1000 ? 'var(--error)' : val >= 300 ? 'var(--success)' : 'var(--text-muted)';
+    };
+
+    // ── Thumbnail handling ──
+    window.handleThumbPreview = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      document.getElementById('thumbPreview').src = url;
+      document.getElementById('thumbPreviewWrap').style.display = 'block';
+      document.getElementById('thumbDropZone').style.display = 'none';
+    };
+
+    window.clearThumbnail = function() {
+      document.getElementById('thumbnailFile').value = '';
+      document.getElementById('thumbPreviewWrap').style.display = 'none';
+      document.getElementById('thumbDropZone').style.display = 'flex';
+    };
+
+    // ── Doc select feedback ──
+    window.handleDocSelect = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const el = document.getElementById('docDropText');
+      el.textContent = `✓ ${file.name}`;
+      document.getElementById('docDropZone').classList.add('file-drop-zone--selected');
+    };
+
+    // ── Load profile ──
+    async function loadProfile() {
+      try {
+        const { data: profile, error } = await sb
+          .from('profiles').select('*').eq('id', currentUser.id).single();
+
+        if (error) throw error;
+
+        if (profile) {
+          document.getElementById('sidebarName').textContent = profile.full_name || currentUser.email;
+          document.getElementById('sidebarMeta').textContent = profile.department ? `— ${profile.department}` : '— Student Author';
+          document.getElementById('profName').value  = profile.full_name   || '';
+          document.getElementById('profId').value    = profile.college_id  || '';
+          document.getElementById('profDept').value  = profile.department  || '';
+          document.getElementById('profInst').value  = profile.institution || '';
+          document.getElementById('profBio').value   = profile.bio         || '';
+        } else {
+          document.getElementById('sidebarName').textContent = currentUser.user_metadata?.full_name || currentUser.email;
+        }
+      } catch (err) {
+        console.error('loadProfile:', err);
+        document.getElementById('sidebarName').textContent = currentUser.user_metadata?.full_name || currentUser.email;
+      }
+    }
+
+    // ── Save profile ──
+    window.saveProfile = async function() {
+      const btn     = document.getElementById('saveProfileBtn');
+      const errBox  = document.getElementById('profileErr');
+      const succBox = document.getElementById('profileSuccess');
+      errBox.classList.remove('show');
+      succBox.classList.remove('show');
+      btn.disabled    = true;
+      btn.textContent = 'Saving…';
+      try {
+        const updates = {
+          id:          currentUser.id,
+          full_name:   document.getElementById('profName').value.trim(),
+          department:  document.getElementById('profDept').value.trim(),
+          institution: document.getElementById('profInst').value.trim(),
+          bio:         document.getElementById('profBio').value.trim(),
+        };
+        const { error } = await sb.from('profiles').upsert(updates, { onConflict: 'id' });
+        if (error) throw error;
+        succBox.textContent = '✓ Profile saved successfully.';
+        succBox.classList.add('show');
+        await loadProfile();
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.classList.add('show');
+      } finally {
+        btn.disabled    = false;
+        btn.textContent = 'Update Profile';
+      }
+    };
+
+    // ── Upload research ──
+    window.handleUpload = async function() {
+      const btn     = document.getElementById('uploadBtn');
+      const errBox  = document.getElementById('uploadErr');
+      const succBox = document.getElementById('uploadSuccess');
+
+      errBox.classList.remove('show');
+      succBox.classList.remove('show');
+
+      const title   = document.getElementById('paperTitle').value.trim();
+      const summary = document.getElementById('paperSummary').value.trim();
+      const docFile = document.getElementById('docFile').files[0];
+
+      // Client-side validation
+      if (!title) {
+        errBox.textContent = 'Please enter a research title.';
+        errBox.classList.add('show');
+        return;
+      }
+      if (!summary) {
+        errBox.textContent = 'Please write a summary for your research.';
+        errBox.classList.add('show');
+        return;
+      }
+      if (summary.length < 100) {
+        errBox.textContent = `Summary is too short (${summary.length} chars). Please write at least 100 characters.`;
+        errBox.classList.add('show');
+        return;
+      }
+      if (!docFile) {
+        errBox.textContent = 'Please select a document to upload (PDF, DOCX, or DOC).';
+        errBox.classList.add('show');
+        return;
+      }
+
+      let { data: { session } } = await sb.auth.getSession();
+      if (!session) {
+        const refreshed = await sb.auth.refreshSession();
+        session = refreshed.data.session;
+      }
+      if (!session) {
+        errBox.textContent = 'Your session has expired. Please log out and log back in.';
+        errBox.classList.add('show');
+        return;
+      }
+
+      btn.disabled    = true;
+      btn.textContent = 'Publishing…';
+      showProgress(15, 'Preparing upload…');
+
+      try {
+        const formData = new FormData();
+        formData.append('docFile',     docFile);
+        formData.append('title',       title);
+        formData.append('summary',     summary);
+        formData.append('authorId',    (currentUser ?? session.user).id);
+        formData.append('accessToken', session.access_token);
+
+        const thumbFile = document.getElementById('thumbnailFile').files[0];
+        if (thumbFile) {
+          formData.append('thumbnailFile', thumbFile);
+        }
+
+        showProgress(40, 'Uploading document…');
+
+        const response = await fetch('/.netlify/functions/upload-paper', {
+          method : 'POST',
+          body   : formData
+        });
+
+        showProgress(80, 'Finalising…');
+
+        let result;
+        try {
+          result = await response.json();
+        } catch {
+          throw new Error(`Server returned a non-JSON response (HTTP ${response.status}). Check Netlify function logs.`);
+        }
+
+        if (!response.ok) {
+          throw new Error(result.error || `Upload failed (HTTP ${response.status}).`);
+        }
+
+        showProgress(100, 'Published!');
+        succBox.innerHTML = `✓ Research published! <a href="paper.html?id=${result.paperId}" target="_blank" style="color:var(--accent); text-decoration:underline;">View it live →</a>`;
+        succBox.classList.add('show');
+
+        // Reset form
+        document.getElementById('paperTitle').value = '';
+        document.getElementById('paperSummary').value = '';
+        document.getElementById('charCount').textContent = '0 / 1000';
+        document.getElementById('docFile').value = '';
+        document.getElementById('docDropText').textContent = 'Click to upload your document';
+        document.getElementById('docDropZone').classList.remove('file-drop-zone--selected');
+        clearThumbnail();
+
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.classList.add('show');
+      } finally {
+        btn.disabled    = false;
+        btn.textContent = 'Publish Research';
+        setTimeout(hideProgress, 4000);
+      }
+    };
+
+    // ── Load my papers ──
+    async function loadPapers() {
+      const container = document.getElementById('myPapersContainer');
+      container.innerHTML = '<p style="color:var(--text-muted)">Loading…</p>';
+      try {
+        const { data: papers, error } = await sb
+          .from('papers')
+          .select('id, title, created_at')
+          .eq('author_id', currentUser.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (!papers || papers.length === 0) {
+          container.innerHTML = '<p style="color:var(--text-muted)">No publications yet. Upload your first research above.</p>';
+          return;
+        }
+
+        container.innerHTML = papers.map(p => `
+          <div class="paper-item">
+            <div>
+              <div class="paper-item__title">${escHtml(p.title)}</div>
+              <div class="paper-item__meta">${new Date(p.created_at).toLocaleDateString('en-IN')}</div>
+            </div>
+            <a href="paper.html?id=${p.id}" class="btn btn--outline" target="_blank">View Live</a>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+      }
+    }
+
+    // ── Progress helpers ──
+    function showProgress(pct, label) {
+      document.getElementById('progressWrap').classList.add('show');
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('progressLabel').textContent = label;
+    }
+    function hideProgress() {
+      document.getElementById('progressWrap').classList.remove('show');
+      document.getElementById('progressFill').style.width = '0%';
+      document.getElementById('progressLabel').textContent = '';
+    }
+
+    function escHtml(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scholarly Repository — Student Research Hub</title>
+  <link rel="icon" href="data:," />
+  <meta name="description" content="A student academic repository for research papers and case studies." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a href="index.html" class="site-logo">Scholarly<span>.</span></a>
+      <nav class="site-nav" id="headerNav">
+        <a href="#contributors">Contributors</a>
+        <a href="login.html">Log In</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero fade-in">
+    <div class="hero__eyebrow">Student Research Repository</div>
+    <h1>Student Research,<br>Openly Published</h1>
+    <p>A curated collection of research papers and case studies authored by students across all branches and disciplines.</p>
+  </section>
+
+  <!-- ── Search Bar ── -->
+  <div class="search-section">
+    <div class="search-bar-wrap">
+      <span class="search-icon">🔍</span>
+      <input
+        type="search"
+        id="studySearch"
+        class="search-input"
+        placeholder="Search by title, author, keywords, or summary…"
+        autocomplete="off"
+        oninput="handleSearch()"
+      />
+      <button class="search-clear" id="searchClearBtn" onclick="clearSearch()" aria-label="Clear search" style="display:none;">✕</button>
+    </div>
+    <div class="search-meta" id="searchMeta"></div>
+  </div>
+
+  <!-- ── All Studies Grid ── -->
+  <main class="section" id="studiesSection">
+    <h2 class="section-title fade-in">Published Studies</h2>
+    <div class="research-grid" id="studiesGrid">
+      <div class="skeleton skeleton-research-card"></div>
+      <div class="skeleton skeleton-research-card"></div>
+      <div class="skeleton skeleton-research-card"></div>
+      <div class="skeleton skeleton-research-card"></div>
+      <div class="skeleton skeleton-research-card"></div>
+      <div class="skeleton skeleton-research-card"></div>
+    </div>
+    <div id="noStudiesMessage" style="display:none; text-align:center; padding:4rem 2rem; color:var(--text-muted);">
+      <div style="font-size:3rem; margin-bottom:1rem;">📚</div>
+      <p style="font-size:1.1rem;">No studies found.</p>
+      <p style="margin-top:0.5rem; font-size:0.9rem;">Try a different search term.</p>
+    </div>
+  </main>
+
+  <!-- ── Contributors ── -->
+  <div style="background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+    <main class="section" id="contributors">
+      <h2 class="fade-in" style="margin-bottom: 2rem; text-align: center;">Repository Contributors</h2>
+      <div class="grid" id="authorsGrid">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+      <div id="errorMessage" style="display:none; text-align:center; padding: 3rem; color: var(--text-muted);">
+        <p>Unable to load repository profiles. Please check your data configurations.</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- ── Summary Modal ── -->
+  <div class="modal-overlay" id="summaryModal" onclick="closeModal(event)">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+
+      <button class="modal-close" onclick="closeModalDirect()" aria-label="Close">✕</button>
+
+      <div class="modal-thumbnail-wrap" id="modalThumbnailWrap" style="display:none;">
+        <img src="" alt="" id="modalThumbnail" class="modal-thumbnail" />
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-eyebrow">Research Summary</div>
+        <h2 class="modal-title" id="modalTitle">…</h2>
+        <div class="modal-author-line" id="modalAuthorLine"></div>
+        <div class="modal-date" id="modalDate"></div>
+
+        <div class="modal-summary-text" id="modalSummary">…</div>
+
+        <div class="modal-download-section">
+          <a href="#" id="modalViewBtn" class="btn btn--outline" style="width:100%; padding:0.875rem; font-size:0.9375rem; gap:0.5rem; display:none;" target="_blank">
+            📖 View Full Paper
+          </a>
+          <a href="#" id="modalDownloadBtn" class="btn btn--primary btn--download-cta" download target="_blank">
+            📥 Download Research Document
+          </a>
+          <p class="modal-download-desc">
+            This summary gives a quick overview of the research. Download the original document for the complete paper, methodology, references, and findings.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="shloka-container fade-in">
+    <p class="shloka-text">संगच्छध्वं संवदध्वं सं वो मनांसि जानताम् ।</p>
+    <p class="shloka-translation">"Let us move together, let us speak together, let our minds meet in harmony."</p>
+  </div>
+
+  <footer class="site-footer">
+    <p>© 2026 · TIDKE'S CREATION · All Rights Reserved</p>
+    <p style="margin-top:.5rem;">An open-access student repository compiling research paper analysis &amp; innovation across all departments.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    const SUPABASE_URL  = "https://xpakodbcszobvvbhurmj.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwYWtvZGJjc3pvYnZ2Ymh1cm1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyODM3OTYsImV4cCI6MjA5Nzg1OTc5Nn0.ZPxMPFgpMfimv7x5WkK_w6K45W23v7QlmRr4gWuahts";
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    const studiesGrid   = document.getElementById('studiesGrid');
+    const authorsGrid   = document.getElementById('authorsGrid');
+    const errorEl       = document.getElementById('errorMessage');
+    const noStudiesEl   = document.getElementById('noStudiesMessage');
+    const searchMeta    = document.getElementById('searchMeta');
+    const nav           = document.getElementById('headerNav');
+
+    // All loaded studies (for client-side search filtering)
+    let allStudies = [];
+
+    // ── Auth nav switch ──
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      nav.innerHTML = `<a href="dashboard.html" class="active">Dashboard</a>
+                       <a href="#" id="logoutBtn">Log Out</a>`;
+      document.getElementById('logoutBtn')?.addEventListener('click', async e => {
+        e.preventDefault();
+        await sb.auth.signOut();
+        window.location.reload();
+      });
+    }
+
+    // ── Modal logic ──
+    window.openSummaryModal = function(paper) {
+      const modal = document.getElementById('summaryModal');
+
+      document.getElementById('modalTitle').textContent   = paper.title;
+      document.getElementById('modalSummary').textContent = paper.abstract || 'No summary available for this study.';
+
+      const authorLine = document.getElementById('modalAuthorLine');
+      if (paper.author_name) {
+        authorLine.textContent = '✍️ ' + paper.author_name;
+        authorLine.style.display = '';
+      } else {
+        authorLine.style.display = 'none';
+      }
+
+      const dateEl = document.getElementById('modalDate');
+      if (paper.published_date || paper.created_at) {
+        const d = new Date(paper.published_date || paper.created_at);
+        dateEl.textContent = '📅 Published ' + d.toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' });
+        dateEl.style.display = '';
+      } else {
+        dateEl.style.display = 'none';
+      }
+
+      const thumbWrap = document.getElementById('modalThumbnailWrap');
+      const thumbImg  = document.getElementById('modalThumbnail');
+      if (paper.thumbnail_url) {
+        thumbImg.src            = paper.thumbnail_url;
+        thumbImg.alt            = paper.title;
+        thumbWrap.style.display = 'block';
+      } else {
+        thumbWrap.style.display = 'none';
+      }
+
+      const viewBtn = document.getElementById('modalViewBtn');
+      viewBtn.href          = `paper.html?id=${paper.id}`;
+      viewBtn.style.display = 'inline-flex';
+
+      const dlBtn = document.getElementById('modalDownloadBtn');
+      if (paper.doc_url || paper.docx_url) {
+        dlBtn.href          = paper.doc_url || paper.docx_url;
+        dlBtn.style.display = 'inline-flex';
+      } else {
+        dlBtn.style.display = 'none';
+      }
+
+      modal.classList.add('modal-overlay--open');
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closeModalDirect = function() {
+      document.getElementById('summaryModal').classList.remove('modal-overlay--open');
+      document.body.style.overflow = '';
+    };
+
+    window.closeModal = function(event) {
+      if (event.target === document.getElementById('summaryModal')) closeModalDirect();
+    };
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModalDirect();
+    });
+
+    // ── Search logic ──
+    window.handleSearch = function() {
+      const raw  = document.getElementById('studySearch').value;
+      const term = raw.trim().toLowerCase();
+
+      document.getElementById('searchClearBtn').style.display = term ? 'flex' : 'none';
+
+      if (!term) {
+        renderStudies(allStudies);
+        searchMeta.textContent = '';
+        return;
+      }
+
+      const matched = allStudies.filter(p => {
+        const haystack = [
+          p.title,
+          p.author_name,
+          p.abstract,
+          (p.keywords || []).join(' ')
+        ].join(' ').toLowerCase();
+        return haystack.includes(term);
+      });
+
+      renderStudies(matched);
+      searchMeta.textContent = matched.length
+        ? `${matched.length} result${matched.length !== 1 ? 's' : ''} for "${raw.trim()}"`
+        : '';
+    };
+
+    window.clearSearch = function() {
+      document.getElementById('studySearch').value = '';
+      document.getElementById('searchClearBtn').style.display = 'none';
+      searchMeta.textContent = '';
+      renderStudies(allStudies);
+    };
+
+    // ── Render studies grid ──
+    function renderStudies(papers) {
+      if (!papers || papers.length === 0) {
+        studiesGrid.innerHTML = '';
+        noStudiesEl.style.display = 'block';
+        return;
+      }
+
+      noStudiesEl.style.display = 'none';
+      const delays = ['fade-in-delay-1','fade-in-delay-2','fade-in-delay-3'];
+
+      studiesGrid.innerHTML = papers.map((paper, i) => {
+        const pubDate = (paper.published_date || paper.created_at)
+          ? new Date(paper.published_date || paper.created_at).toLocaleDateString('en-IN', { year:'numeric', month:'short', day:'numeric' })
+          : '';
+
+        const previewText = paper.abstract
+          ? (paper.abstract.length > 160 ? paper.abstract.slice(0, 158) + '…' : paper.abstract)
+          : 'No summary available.';
+
+        const thumbHtml = paper.thumbnail_url
+          ? `<div class="rc-thumb-wrap"><img src="${escHtml(paper.thumbnail_url)}" alt="${escHtml(paper.title)}" class="rc-thumb" loading="lazy" /></div>`
+          : `<div class="rc-thumb-wrap rc-thumb-wrap--placeholder"><span class="rc-thumb-icon">📄</span></div>`;
+
+        const paperJson = escAttr(JSON.stringify({
+          id           : paper.id,
+          title        : paper.title,
+          abstract     : paper.abstract,
+          author_name  : paper.author_name,
+          thumbnail_url: paper.thumbnail_url,
+          doc_url      : paper.doc_url,
+          docx_url     : paper.docx_url,
+          published_date: paper.published_date,
+          created_at   : paper.created_at,
+        }));
+
+        return `
+          <article class="research-card fade-in ${delays[i % delays.length]}" data-paper='${paperJson}'>
+            ${thumbHtml}
+            <div class="rc-body">
+              ${pubDate ? `<div class="rc-date">📅 ${pubDate}</div>` : ''}
+              <h3 class="rc-title">${escHtml(paper.title)}</h3>
+              ${paper.author_name ? `<div class="rc-author">👤 ${escHtml(paper.author_name)}</div>` : ''}
+              <p class="rc-preview">${escHtml(previewText)}</p>
+              <div class="rc-actions">
+                <button class="btn btn--outline rc-summary-btn" onclick="openSummaryModal(JSON.parse(this.closest('.research-card').dataset.paper))">
+                  📖 Read Summary
+                </button>
+                ${(paper.doc_url || paper.docx_url) ? `<a href="${escHtml(paper.doc_url || paper.docx_url)}" class="btn rc-download-btn" download target="_blank">📥 Download</a>` : ''}
+              </div>
+            </div>
+          </article>`;
+      }).join('');
+    }
+
+    // ── Load all studies ──
+    async function loadStudies() {
+      try {
+        const { data: papers, error: paperErr } = await sb
+          .from('papers')
+          .select('id, title, abstract, thumbnail_url, doc_url, docx_url, published_date, created_at, keywords, author_id, profiles(full_name)')
+          .order('created_at', { ascending: false });
+
+        if (paperErr) throw paperErr;
+
+        allStudies = (papers || []).map(p => ({
+          ...p,
+          author_name: p.profiles?.full_name || null,
+        }));
+
+        renderStudies(allStudies);
+
+      } catch (err) {
+        console.error('loadStudies:', err);
+        studiesGrid.innerHTML = '';
+        noStudiesEl.style.display = 'block';
+        noStudiesEl.innerHTML = `<div style="font-size:3rem;margin-bottom:1rem;">⚠️</div><p>Unable to load studies. Please try again later.</p>`;
+      }
+    }
+
+    // ── Load contributors (authors) ──
+    async function loadAuthors() {
+      try {
+        const { data: profiles, error: profileErr } = await sb
+          .from('profiles')
+          .select('id, full_name, college_id, department, institution')
+          .order('full_name', { ascending: true });
+
+        if (profileErr) throw profileErr;
+
+        const { data: papers, error: paperErr } = await sb
+          .from('papers')
+          .select('author_id');
+
+        if (paperErr) throw paperErr;
+
+        if (!profiles || profiles.length === 0) {
+          authorsGrid.innerHTML = '';
+          errorEl.style.display = 'block';
+          errorEl.querySelector('p').textContent = "No registered student author profiles yet.";
+          return;
+        }
+
+        const countsMap = {};
+        (papers || []).forEach(p => countsMap[p.author_id] = (countsMap[p.author_id] || 0) + 1);
+
+        const delays = ['fade-in-delay-1', 'fade-in-delay-2', 'fade-in-delay-3'];
+        authorsGrid.innerHTML = profiles.map((profile, i) => {
+          const initial  = profile.full_name ? profile.full_name.charAt(0).toUpperCase() : '?';
+          const pubCount = countsMap[profile.id] || 0;
+          const pubLabel = pubCount === 1 ? '1 Publication' : `${pubCount} Publications`;
+
+          return `
+            <div class="author-card fade-in ${delays[i % delays.length]}">
+              <div class="author-card__avatar">${escHtml(initial)}</div>
+              <div class="author-card__name">${escHtml(profile.full_name)}</div>
+              <div class="author-card__meta">
+                <strong>Student ID:</strong> ${escHtml(profile.college_id)}<br>
+                <strong>Branch:</strong> ${escHtml(profile.department)}<br>
+                <strong>Institution:</strong> ${escHtml(profile.institution)}
+              </div>
+              <div class="author-card__pub-count">${pubLabel}</div>
+              <a href="author.html?id=${encodeURIComponent(profile.id)}" class="btn btn--primary">View Repository →</a>
+            </div>`;
+        }).join('');
+
+      } catch (err) {
+        console.error('loadAuthors:', err);
+        authorsGrid.innerHTML = '';
+        errorEl.style.display = 'block';
+      }
+    }
+
+    function escHtml(str) {
+      return String(str || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function escAttr(str) {
+      return String(str || '').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+    }
+
+    // Load both in parallel
+    await Promise.all([loadStudies(), loadAuthors()]);
+  </script>
+
+</body>
+</html>

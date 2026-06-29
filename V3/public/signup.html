@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up — Scholarly Repository</title>
+  <link rel="icon" href="data:," />
+  <meta name="description" content="Create your author account on the Student Research Repository." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a href="index.html" class="site-logo">Scholarly<span>.</span></a>
+      <nav class="site-nav">
+        <a href="index.html">← Home</a>
+        <a href="login.html">Log In</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="auth-wrap fade-in">
+    <div class="auth-card">
+
+      <div class="auth-card__logo">Scholarly<span>.</span></div>
+      <p class="auth-card__subtitle">Student Research Repository</p>
+
+      <h2>Create your account</h2>
+
+      <div class="alert alert--error"   id="errorMsg"></div>
+      <div class="alert alert--success" id="successMsg"></div>
+
+      <!-- FIX: removed escaped quotes from id attribute -->
+      <div id="signupForm">
+        <div class="form-group">
+          <label for="fullName">Full Name</label>
+          <input type="text" id="fullName" placeholder="e.g. John Doe" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="collegeId">Student Roll No / ID</label>
+            <input type="text" id="collegeId" placeholder="e.g. BCA-64-25" required />
+          </div>
+          <div class="form-group">
+            <label for="department">Branch / Major</label>
+            <input type="text" id="department" placeholder="e.g. BCA" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="institution">College / Institution</label>
+          <input type="text" id="institution" placeholder="e.g. MET Institute of Technology" required />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Minimum 6 characters" required />
+        </div>
+
+        <button class="btn btn--primary" style="width:100%; margin-top:1rem;" id="signupBtn">
+          Create Account
+        </button>
+
+        <!-- Google OAuth signup -->
+        <div style="margin-top:1rem; text-align:center; color:var(--text-muted); font-size:0.875rem;">— or —</div>
+        <button class="btn btn--outline" style="width:100%; margin-top:1rem; display:flex; align-items:center; justify-content:center; gap:0.5rem;" id="googleBtn">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.7-6.7C35.8 2.5 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.8 6C12.4 13.3 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 6.9-9.9 6.9-17z"/><path fill="#FBBC05" d="M10.5 28.7A14.6 14.6 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-7.9 6C6.6 42.6 14.6 48 24 48z"/></svg>
+          Sign up with Google
+        </button>
+
+        <p class="auth-switch">
+          Already have an account? <a href="login.html">Log In</a>
+        </p>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2026 · TIDKE'S CREATION</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    // FIX: use window.supabase — CDN global, avoids name collision
+    const SUPABASE_URL  = "https://xpakodbcszobvvbhurmj.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwYWtvZGJjc3pvYnZ2Ymh1cm1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyODM3OTYsImV4cCI6MjA5Nzg1OTc5Nn0.ZPxMPFgpMfimv7x5WkK_w6K45W23v7QlmRr4gWuahts";
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    const signupBtn = document.getElementById('signupBtn');
+    const googleBtn = document.getElementById('googleBtn');
+    const errorEl   = document.getElementById('errorMsg');
+    const successEl = document.getElementById('successMsg');
+
+    signupBtn.addEventListener('click', handleSignup);
+
+    googleBtn.addEventListener('click', async () => {
+      googleBtn.disabled = true;
+      googleBtn.textContent = 'Redirecting…';
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin + '/dashboard.html' }
+      });
+      if (error) {
+        errorEl.textContent = error.message;
+        errorEl.classList.add('show');
+        googleBtn.disabled = false;
+        googleBtn.textContent = 'Sign up with Google';
+      }
+    });
+
+    async function handleSignup() {
+      errorEl.classList.remove('show');
+      successEl.classList.remove('show');
+
+      const fullName    = document.getElementById('fullName').value.trim();
+      const collegeId   = document.getElementById('collegeId').value.trim();
+      const department  = document.getElementById('department').value.trim();
+      const institution = document.getElementById('institution').value.trim();
+      const email       = document.getElementById('email').value.trim();
+      const password    = document.getElementById('password').value;
+
+      if (!fullName || !collegeId || !department || !institution || !email || !password) {
+        errorEl.textContent = 'Please fill out all fields.';
+        errorEl.classList.add('show');
+        return;
+      }
+
+      signupBtn.disabled    = true;
+      signupBtn.textContent = 'Creating account…';
+
+      try {
+        const { data: authData, error: authError } = await sb.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: fullName } }
+        });
+
+        if (authError) throw authError;
+        const userId = authData.user?.id;
+        if (!userId) throw new Error('Signup processed but user ID was not returned.');
+
+        const { error: profileError } = await sb.from('profiles').insert({
+          id: userId,
+          full_name: fullName,
+          college_id: collegeId,
+          department,
+          institution
+        });
+
+        if (profileError) throw profileError;
+
+        successEl.textContent = '✓ Account created! You can now log in.';
+        successEl.classList.add('show');
+        document.getElementById('signupForm').style.display = 'none';
+
+      } catch (err) {
+        errorEl.textContent = err.message || 'Something went wrong. Please try again.';
+        errorEl.classList.add('show');
+        signupBtn.disabled    = false;
+        signupBtn.textContent = 'Create Account';
+      }
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,63 @@
+# ============================================================
+#  netlify.toml — Netlify build & functions configuration
+#  Place this file at the ROOT of your repository.
+# ============================================================
+
+[build]
+  publish   = "public"
+  command   = "npm install"
+  functions = "netlify/functions"
+
+# ── Environment variable handling ────────────────────────────
+# SECRET VALUES go in Netlify Dashboard → Site Settings → Environment Variables:
+#   SUPABASE_URL              (your project URL)
+#   SUPABASE_SERVICE_ROLE_KEY (service role key — never expose to browser)
+#
+# The anon key and URL are also hardcoded in the HTML files below.
+# Netlify's secrets scanner flags SUPABASE_URL because it matches a dashboard
+# env var. Since these are intentionally public Supabase anon credentials,
+# we disable scanning for those specific keys.
+[build.environment]
+  NODE_VERSION           = "18"
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,SUPABASE_ANON_KEY"
+
+# ── Redirect rules ───────────────────────────────────────────
+
+[[redirects]]
+  from = "/"
+  to   = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/login"
+  to   = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/signup"
+  to   = "/signup.html"
+  status = 200
+
+[[redirects]]
+  from = "/dashboard"
+  to   = "/dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/paper"
+  to   = "/paper.html"
+  status = 200
+
+[[redirects]]
+  from   = "/*"
+  to     = "/404.html"
+  status = 404
+
+# ── Security headers ─────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
+    Permissions-Policy     = "camera=(), microphone=(), geolocation=()"

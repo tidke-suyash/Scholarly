@@ -1,0 +1,13 @@
+{
+  "name": "scholarly-repository",
+  "version": "1.0.0",
+  "description": "Dynamic student academic repository — Netlify + Supabase",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.4",
+    "mammoth": "^1.8.0",
+    "busboy": "^1.6.0"
+  }
+}

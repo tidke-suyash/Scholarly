@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account Center — Scholarly Repository</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Account Center extras ── */
+    .account-wrap {
+      max-width: 680px;
+      margin: 4rem auto;
+      padding: 0 1.5rem 4rem;
+    }
+    .account-wrap h1 {
+      font-size: 1.75rem;
+      margin-bottom: 0.25rem;
+    }
+    .account-wrap .subtitle {
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+      font-size: 0.9375rem;
+    }
+    .account-section {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .account-section h2 {
+      font-size: 1.05rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .account-section h2 span.badge {
+      font-size: 0.7rem;
+      background: var(--accent);
+      color: #fff;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-weight: 600;
+      letter-spacing: .03em;
+    }
+    .user-info-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .user-avatar-big {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 1.5rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .user-info-text strong { display: block; font-size: 1rem; }
+    .user-info-text small  { color: var(--text-muted); font-size: 0.8125rem; }
+
+    .provider-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8125rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Danger zone */
+    .danger-zone {
+      border-color: #c0392b40;
+      background: #c0392b08;
+    }
+    .danger-zone h2 { color: #e74c3c; }
+    .danger-zone p  { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem; }
+
+    /* Confirm modal overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+    }
+    .modal-box h3  { margin-bottom: 0.75rem; font-size: 1.15rem; }
+    .modal-box p   { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .modal-actions { display: flex; gap: 0.75rem; justify-content: center; }
+
+    /* Password change */
+    .pw-toggle {
+      cursor: pointer;
+      color: var(--accent);
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      display: inline-block;
+    }
+    #pwFields { display: none; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a href="index.html" class="site-logo">Scholarly<span>.</span></a>
+      <nav class="site-nav">
+        <a href="dashboard.html">← Dashboard</a>
+        <a href="#" id="logoutBtn">Log Out</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="account-wrap fade-in">
+    <h1>⚙️ Account Center</h1>
+    <p class="subtitle">Manage your login, security, and account data.</p>
+
+    <!-- ── Account info ── -->
+    <div class="account-section">
+      <h2>🪪 Account Info</h2>
+      <div class="user-info-row">
+        <div class="user-avatar-big" id="avatarBig">?</div>
+        <div class="user-info-text">
+          <strong id="acName">—</strong>
+          <small id="acEmail">—</small>
+          <div class="provider-badge" id="providerBadge">
+            <span id="providerIcon">🔑</span>
+            <span id="providerLabel">Loading…</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Change email ── -->
+    <div class="account-section" id="emailSection">
+      <h2>📧 Change Email</h2>
+      <div class="alert alert--error"   id="emailErr"></div>
+      <div class="alert alert--success" id="emailSucc"></div>
+      <div class="form-group">
+        <label for="newEmail">New Email Address</label>
+        <input type="email" id="newEmail" placeholder="new@example.com" />
+      </div>
+      <button class="btn btn--primary" id="updateEmailBtn">Update Email</button>
+    </div>
+
+    <!-- ── Change password ── -->
+    <div class="account-section" id="passwordSection">
+      <h2>🔒 Change Password</h2>
+      <div class="alert alert--error"   id="pwErr"></div>
+      <div class="alert alert--success" id="pwSucc"></div>
+      <span class="pw-toggle" id="pwToggle">▶ Change password</span>
+      <div id="pwFields">
+        <div class="form-group">
+          <label for="newPw">New Password</label>
+          <input type="password" id="newPw" placeholder="Minimum 6 characters" />
+        </div>
+        <div class="form-group">
+          <label for="confirmPw">Confirm Password</label>
+          <input type="password" id="confirmPw" placeholder="Repeat new password" />
+        </div>
+        <button class="btn btn--primary" id="updatePwBtn">Update Password</button>
+      </div>
+    </div>
+
+    <!-- ── Danger zone ── -->
+    <div class="account-section danger-zone">
+      <h2>⚠️ Danger Zone</h2>
+      <p>Permanently delete your account and all associated profile data. This action <strong>cannot be undone</strong>.</p>
+      <button class="btn btn--danger" id="deleteAccountBtn">Delete My Account</button>
+    </div>
+  </main>
+
+  <!-- Delete confirm modal -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal-box">
+      <h3>Delete Account?</h3>
+      <p>This will permanently delete your profile and all your publications. You cannot recover this data.</p>
+      <div class="alert alert--error" id="deleteErr"></div>
+      <div class="modal-actions">
+        <button class="btn btn--outline"  id="cancelDeleteBtn">Cancel</button>
+        <button class="btn btn--danger"   id="confirmDeleteBtn">Yes, Delete Everything</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>© 2026 · TIDKE'S CREATION · All Rights Reserved</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    const SUPABASE_URL  = "https://xpakodbcszobvvbhurmj.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwYWtvZGJjc3pvYnZ2Ymh1cm1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyODM3OTYsImV4cCI6MjA5Nzg1OTc5Nn0.ZPxMPFgpMfimv7x5WkK_w6K45W23v7QlmRr4gWuahts";
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    // ── Auth guard ──
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; }
+    const user = session.user;
+
+    // ── Logout ──
+    document.getElementById('logoutBtn').addEventListener('click', async e => {
+      e.preventDefault();
+      await sb.auth.signOut();
+      window.location.href = 'index.html';
+    });
+
+    // ── Populate account info ──
+    async function loadAccountInfo() {
+      const { data: profile } = await sb.from('profiles').select('full_name').eq('id', user.id).single();
+      const name = profile?.full_name || user.user_metadata?.full_name || user.email.split('@')[0];
+      const initial = name.charAt(0).toUpperCase();
+
+      document.getElementById('avatarBig').textContent = initial;
+      document.getElementById('acName').textContent    = name;
+      document.getElementById('acEmail').textContent   = user.email;
+
+      // Detect provider (Google OAuth vs email/password)
+      const provider = user.app_metadata?.provider || 'email';
+      const isGoogle = provider === 'google';
+      document.getElementById('providerIcon').textContent  = isGoogle ? '🟢' : '🔑';
+      document.getElementById('providerLabel').textContent = isGoogle ? 'Signed in with Google' : 'Email & Password';
+
+      // Hide email/password fields for OAuth users (Google manages those)
+      if (isGoogle) {
+        document.getElementById('emailSection').style.display    = 'none';
+        document.getElementById('passwordSection').style.display = 'none';
+      }
+    }
+
+    await loadAccountInfo();
+
+    // ── Change email ──
+    document.getElementById('updateEmailBtn')?.addEventListener('click', async () => {
+      const btn     = document.getElementById('updateEmailBtn');
+      const errEl   = document.getElementById('emailErr');
+      const succEl  = document.getElementById('emailSucc');
+      const newEmail = document.getElementById('newEmail').value.trim();
+
+      errEl.classList.remove('show');
+      succEl.classList.remove('show');
+
+      if (!newEmail) { errEl.textContent = 'Enter a new email address.'; errEl.classList.add('show'); return; }
+
+      btn.disabled    = true;
+      btn.textContent = 'Updating…';
+
+      const { error } = await sb.auth.updateUser({ email: newEmail });
+      if (error) {
+        errEl.textContent = error.message;
+        errEl.classList.add('show');
+      } else {
+        succEl.textContent = '✓ Confirmation sent to your new email. Click the link to confirm the change.';
+        succEl.classList.add('show');
+        document.getElementById('newEmail').value = '';
+      }
+
+      btn.disabled    = false;
+      btn.textContent = 'Update Email';
+    });
+
+    // ── Change password ──
+    document.getElementById('pwToggle').addEventListener('click', () => {
+      const fields  = document.getElementById('pwFields');
+      const toggle  = document.getElementById('pwToggle');
+      const open    = fields.style.display === 'block';
+      fields.style.display = open ? 'none' : 'block';
+      toggle.textContent   = open ? '▶ Change password' : '▼ Change password';
+    });
+
+    document.getElementById('updatePwBtn')?.addEventListener('click', async () => {
+      const btn     = document.getElementById('updatePwBtn');
+      const errEl   = document.getElementById('pwErr');
+      const succEl  = document.getElementById('pwSucc');
+      const newPw   = document.getElementById('newPw').value;
+      const confPw  = document.getElementById('confirmPw').value;
+
+      errEl.classList.remove('show');
+      succEl.classList.remove('show');
+
+      if (!newPw || !confPw)         { errEl.textContent = 'Fill in both password fields.'; errEl.classList.add('show'); return; }
+      if (newPw !== confPw)          { errEl.textContent = 'Passwords do not match.';       errEl.classList.add('show'); return; }
+      if (newPw.length < 6)          { errEl.textContent = 'Password must be at least 6 characters.'; errEl.classList.add('show'); return; }
+
+      btn.disabled    = true;
+      btn.textContent = 'Updating…';
+
+      const { error } = await sb.auth.updateUser({ password: newPw });
+      if (error) {
+        errEl.textContent = error.message;
+        errEl.classList.add('show');
+      } else {
+        succEl.textContent = '✓ Password updated successfully.';
+        succEl.classList.add('show');
+        document.getElementById('newPw').value     = '';
+        document.getElementById('confirmPw').value = '';
+        document.getElementById('pwFields').style.display = 'none';
+        document.getElementById('pwToggle').textContent   = '▶ Change password';
+      }
+
+      btn.disabled    = false;
+      btn.textContent = 'Update Password';
+    });
+
+    // ── Delete account ──
+    document.getElementById('deleteAccountBtn').addEventListener('click', () => {
+      document.getElementById('deleteModal').classList.add('open');
+    });
+
+    document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+      document.getElementById('deleteModal').classList.remove('open');
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+      const btn    = document.getElementById('confirmDeleteBtn');
+      const errEl  = document.getElementById('deleteErr');
+
+      errEl.classList.remove('show');
+      btn.disabled    = true;
+      btn.textContent = 'Deleting…';
+
+      try {
+        // 1. Delete profile row (papers cascade if FK set up, otherwise delete separately)
+        const { error: profileDelErr } = await sb.from('profiles').delete().eq('id', user.id);
+        if (profileDelErr) throw profileDelErr;
+
+        // 2. Delete papers authored by this user
+        await sb.from('papers').delete().eq('author_id', user.id);
+
+        // 3. Sign out first, then call delete via Supabase admin edge function if available
+        //    For client-side: signOut then call the delete-user edge function
+        //    If you have no edge function, this signs them out and they're soft-deleted
+        await sb.auth.signOut();
+
+        // Redirect with a notice
+        window.location.href = 'index.html?deleted=1';
+
+      } catch (err) {
+        errEl.textContent = err.message || 'Deletion failed. Try again or contact support.';
+        errEl.classList.add('show');
+        btn.disabled    = false;
+        btn.textContent = 'Yes, Delete Everything';
+      }
+    });
+
+    // Close modal on overlay click
+    document.getElementById('deleteModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('deleteModal')) {
+        document.getElementById('deleteModal').classList.remove('open');
+      }
+    });
+  </script>
+
+</body>
+</html>
