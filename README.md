@@ -109,6 +109,6 @@ Redirects and headers are already handled in `netlify.toml`.
 
 ## About
 
-Made by Suyash Tidke — BCA student at MET Institute of Technology, Nashik. I do freelance web dev on the side and build actual projects, not just tutorials. This one went through a lot of debugging before it worked properly (Supabase JWT issues, OAuth profile creation, Netlify secrets scanner conflicts — all hit, all fixed).
+Made by Suyash Tidke — BCA student at MET Institute of Management, Nashik. I do freelance web dev on the side and build actual projects, not just tutorials. This one went through a lot of debugging before it worked properly (Supabase JWT issues, OAuth profile creation, Netlify secrets scanner conflicts — all hit, all fixed).
 
 GitHub: [@tidke-suyash](https://github.com/tidke-suyash)
